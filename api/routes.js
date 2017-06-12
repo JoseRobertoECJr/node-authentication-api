@@ -34,8 +34,12 @@ router.route('/authenticate')
                 res.send(err);
 
             if(!user){
-                res.json({ success: false, message: 'Authenticate failed. You are not registered' });
-            } else{
+                res.json({ success: false, message: 'Authenticate failed. You are not registered.' });
+            } else if(user){
+
+                if(user.password != req.body.password){
+                    res.json({ success: false, message: 'Authenticate failed. Wrong password.' });
+                } else{
                     var token = jwt.sign(user, app.get('superSecret'), {
                         expiresIn: 60*60*24 //24 hours
                     });
@@ -46,6 +50,7 @@ router.route('/authenticate')
                         token: token
                     });
                 }
+            }
         });
     });
 
