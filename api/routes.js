@@ -1,5 +1,11 @@
 const express = require('express');
+const app = express();
 const router = express.Router();
+
+var config = require('./../config');
+app.set('superSecret', config.secret);
+
+var jwt = require('jsonwebtoken');
 
 var User = require('./../models/user');
 
@@ -7,20 +13,39 @@ router.get('/', function(req, res){
     res.send('api works');
 });
 
-router.route('/setup')
+router.route('/users')
 
     .get(function(req, res){
-        var jose = new User({
-            name: 'Jose Roberto',
-            password: '1234',
-            admin: true
-        });
-
-        jose.save(function(err){
+        User.find(function(err, users){
             if(err)
-                throw err;
-            console.log('User saved successfully');
-            res.json({ success: true });
+                res.send(err);
+
+            res.json(users);
+        });
+    });
+
+router.route('/authenticate')
+
+    .post(function(req, res){
+        User.findOne({
+            name: req.body.name
+        }, function(err, user){
+            if(err)
+                res.send(err);
+
+            if(!user){
+                res.json({ success: false, message: 'Authenticate failed. You are not registered' });
+            } else{
+                    var token = jwt.sign(user, app.get('superSecret'), {
+                        expiresIn: 60*60*24 //24 hours
+                    });
+
+                    res.json({
+                        success: true,
+                        message: 'Enjoy your token',
+                        token: token
+                    });
+                }
         });
     });
 
